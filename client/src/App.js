@@ -301,7 +301,7 @@ function SuperAdminDashboard() {
                 </ul>
               </Card>
               <div style={{ textAlign: 'center', marginTop: 16 }}>
-                <img src={process.env.PUBLIC_URL + '/banner.jpeg'} alt="Festival Banner" style={{ maxWidth: 500, width: '100%', height: 'auto', borderRadius: 16, boxShadow: '0 4px 24px #00cec833', marginBottom: 24 }} />
+                <img src={process.env.PUBLIC_URL + '/Banner.jpeg'} alt="Festival Banner" style={{ maxWidth: 500, width: '100%', height: 'auto', borderRadius: 16, boxShadow: '0 4px 24px #00cec833', marginBottom: 24 }} />
               </div>
             </Col>
           </Row>
