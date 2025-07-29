@@ -901,6 +901,8 @@ function SecondaryAdminUpdateDuty() {
       const data = await res.json();
       if (res.ok) {
         setSuccessMsg('Coming time updated successfully!');
+        setComingTime('');
+        setFinishingTime('');
         setTimeout(() => setSuccessMsg(''), 2000);
         // Refresh user details
         const userRes = await fetch(`${API_URL}/api/users/${selectedId}`, {
@@ -950,6 +952,8 @@ function SecondaryAdminUpdateDuty() {
       const data = await res.json();
       if (res.ok) {
         setSuccessMsg('Finishing time updated successfully!');
+        setComingTime('');
+        setFinishingTime('');
         setTimeout(() => setSuccessMsg(''), 2000);
         // Refresh user details
         const userRes = await fetch(`${API_URL}/api/users/${selectedId}`, {
@@ -1136,19 +1140,8 @@ function SecondaryAdminUpdateDuty() {
                 value={dutySchedule}
                 onChange={value => {
                   setDutySchedule(value);
-                  if (value === 'Early Morning') {
-                    setComingTime('04:30');
-                    setFinishingTime('07:30');
-                  } else if (value === 'Morning') {
-                    setComingTime('08:00');
-                    setFinishingTime('11:00');
-                  } else if (value === 'Evening') {
-                    setComingTime('15:30');
-                    setFinishingTime('19:30');
-                  } else {
-                    setComingTime('');
-                    setFinishingTime('');
-                  }
+                  setComingTime('');
+                  setFinishingTime('');
                 }}
                 placeholder="Select a schedule"
                 style={{ width: '100%' }}
@@ -1294,6 +1287,8 @@ function SuperAdminUpdateDuty() {
       const data = await res.json();
       if (res.ok) {
         message.success('Coming time updated successfully!');
+        setComingTime('');
+        setFinishingTime('');
         // Refresh user details
         const userRes = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/users/${selectedId}`, {
           headers: { 'Authorization': `Bearer ${token}` },
@@ -1361,6 +1356,8 @@ function SuperAdminUpdateDuty() {
       const data = await res.json();
       if (res.ok) {
         message.success('Finishing time updated successfully!');
+        setComingTime('');
+        setFinishingTime('');
         // Refresh user details
         const userRes = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/users/${selectedId}`, {
           headers: { 'Authorization': `Bearer ${token}` },
@@ -1600,19 +1597,8 @@ function SuperAdminUpdateDuty() {
                   value={dutySchedule}
                   onChange={value => {
                     setDutySchedule(value);
-                    if (value === 'Early Morning') {
-                      setComingTime('04:30');
-                      setFinishingTime('07:30');
-                    } else if (value === 'Morning') {
-                      setComingTime('08:00');
-                      setFinishingTime('11:00');
-                    } else if (value === 'Evening') {
-                      setComingTime('15:30');
-                      setFinishingTime('19:30');
-                    } else {
-                      setComingTime('');
-                      setFinishingTime('');
-                    }
+                    setComingTime('');
+                    setFinishingTime('');
                   }}
                   placeholder="Select a schedule"
                   style={{ width: '100%' }}

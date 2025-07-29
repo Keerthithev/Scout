@@ -56,18 +56,18 @@ router.put('/:id/duty', authMiddleware, requireAnyRole(['super', 'secondary']), 
   try {
     const { date, comingTime, finishingTime, dutySchedule } = req.body;
     if (!date) return res.status(400).json({ message: 'Date is required' });
+    if (!dutySchedule) return res.status(400).json({ message: 'Duty schedule is required' });
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
     let updated = false;
-    // Find attendance for the date
-    const att = user.attendance.find(a => a.date === date);
+    // Find attendance for the date AND dutySchedule
+    const att = user.attendance.find(a => a.date === date && a.dutySchedule === dutySchedule);
     if (att) {
       if (comingTime) att.comingTime = comingTime;
       if (finishingTime) att.finishingTime = finishingTime;
-      if (dutySchedule) att.dutySchedule = dutySchedule;
       updated = true;
     } else {
-      user.attendance.push({ date, comingTime: comingTime || '', finishingTime: finishingTime || '', dutySchedule: dutySchedule || '' });
+      user.attendance.push({ date, comingTime: comingTime || '', finishingTime: finishingTime || '', dutySchedule });
       updated = true;
     }
     await user.save();
