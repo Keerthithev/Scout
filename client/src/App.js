@@ -2,14 +2,14 @@ import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { ConfigProvider, Layout, Menu, Button, Card, Row, Col, Statistic, List, Avatar, Table, DatePicker, message, Space, Form, Input, Select, Typography, Alert } from 'antd';
+import { ConfigProvider, Layout, Menu, Button, Card, Row, Col, Statistic, List, Avatar, Table, DatePicker, message, Space, Form, Input, Select, Typography, Alert, Modal } from 'antd';
 import Home from './pages/Home';
 import Login from './Login';
 import { isAuthenticated, getAdminRole, logout, startSessionTimer, resetSessionTimer } from './utils/auth';
 import AddUserForm from './components/AddUserForm';
 import UserStatusPage from './pages/UserStatusPage';
 import ViewAllUsers from './pages/ViewAllUsers';
-import { TrophyTwoTone, CrownTwoTone, SmileTwoTone, LikeTwoTone, DownloadOutlined, QrcodeOutlined, EyeOutlined, UserOutlined } from '@ant-design/icons';
+import { TrophyTwoTone, CrownTwoTone, SmileTwoTone, LikeTwoTone, DownloadOutlined, QrcodeOutlined, EyeOutlined, UserOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import QrScanner from 'react-qr-scanner';
 import "../src/index.css"
 import "../src/App.css"
@@ -830,6 +830,9 @@ function SecondaryAdminUpdateDuty() {
   const [attendance, setAttendance] = React.useState([]);
   const [showScanner, setShowScanner] = React.useState(false);
   const [dutySchedule, setDutySchedule] = React.useState('');
+  const [editModalVisible, setEditModalVisible] = React.useState(false);
+  const [editingRecord, setEditingRecord] = React.useState(null);
+  const [editForm] = Form.useForm();
 
   React.useEffect(() => {
     async function fetchUsers() {
@@ -968,6 +971,74 @@ function SecondaryAdminUpdateDuty() {
     }
   };
 
+  const handleEditRecord = (record) => {
+    setEditingRecord(record);
+    editForm.setFieldsValue({
+      comingTime: record.comingTime || '',
+      finishingTime: record.finishingTime || '',
+      dutySchedule: record.dutySchedule || ''
+    });
+    setEditModalVisible(true);
+  };
+
+  const handleDeleteRecord = async (record) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/users/${selectedId}/attendance/${record.date}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSuccessMsg('Attendance record deleted successfully');
+        // Refresh attendance data
+        const userRes = await fetch(`${API_URL}/api/users/${selectedId}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const userData = await userRes.json();
+        if (userRes.ok) {
+          setAttendance(userData.attendance || []);
+        }
+      } else {
+        setErrorMsg(data.message || 'Failed to delete attendance record');
+      }
+    } catch (err) {
+      setErrorMsg('Failed to delete attendance record');
+    }
+  };
+
+  const handleEditSubmit = async (values) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/users/${selectedId}/attendance/${editingRecord.date}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(values),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSuccessMsg('Attendance record updated successfully');
+        setEditModalVisible(false);
+        setEditingRecord(null);
+        // Refresh attendance data
+        const userRes = await fetch(`${API_URL}/api/users/${selectedId}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const userData = await userRes.json();
+        if (userRes.ok) {
+          setAttendance(userData.attendance || []);
+        }
+      } else {
+        setErrorMsg(data.message || 'Failed to update attendance record');
+      }
+    } catch (err) {
+      setErrorMsg('Failed to update attendance record');
+    }
+  };
+
   const attendanceColumns = [
     { title: 'Date', dataIndex: 'date', key: 'date' },
     { title: 'Coming Time', dataIndex: 'comingTime', key: 'comingTime' },
@@ -988,6 +1059,40 @@ function SecondaryAdminUpdateDuty() {
         }
         return '-';
       }
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_, record) => (
+        <Space>
+          <Button 
+            type="primary" 
+            size="small" 
+            icon={<EditOutlined />}
+            onClick={() => handleEditRecord(record)}
+          >
+            Edit
+          </Button>
+          <Button 
+            type="primary" 
+            danger 
+            size="small" 
+            icon={<DeleteOutlined />}
+            onClick={() => {
+              Modal.confirm({
+                title: 'Delete Attendance Record',
+                content: `Are you sure you want to delete the attendance record for ${record.date}?`,
+                okText: 'Yes',
+                okType: 'danger',
+                cancelText: 'No',
+                onOk: () => handleDeleteRecord(record),
+              });
+            }}
+          >
+            Delete
+          </Button>
+        </Space>
+      ),
     },
   ];
 
@@ -1172,6 +1277,72 @@ function SecondaryAdminUpdateDuty() {
             {showScanner ? 'Hide' : 'Show'} QR Scanner
           </Button>
           {showScanner && <QrScannerComponent onScan={handleQrScan} />}
+          
+          {/* Edit Attendance Record Modal */}
+          <Modal
+            title="Edit Attendance Record"
+            open={editModalVisible}
+            onCancel={() => {
+              setEditModalVisible(false);
+              setEditingRecord(null);
+              editForm.resetFields();
+            }}
+            footer={null}
+            width={500}
+          >
+            <Form
+              form={editForm}
+              layout="vertical"
+              onFinish={handleEditSubmit}
+            >
+              <Form.Item
+                label="Date"
+              >
+                <Input
+                  value={editingRecord?.date}
+                  disabled
+                  style={{ background: '#f5f5f5' }}
+                />
+              </Form.Item>
+              <Form.Item
+                label="Coming Time"
+                name="comingTime"
+                rules={[{ required: true, message: 'Please enter coming time' }]}
+              >
+                <Input type="time" />
+              </Form.Item>
+              <Form.Item
+                label="Finishing Time"
+                name="finishingTime"
+              >
+                <Input type="time" />
+              </Form.Item>
+              <Form.Item
+                label="Duty Schedule"
+                name="dutySchedule"
+              >
+                <Select placeholder="Select duty schedule">
+                  <Select.Option value="Early Morning">Early Morning (4:30 AM – 7:30 AM)</Select.Option>
+                  <Select.Option value="Morning">Morning (8:00 AM – 11:00 AM)</Select.Option>
+                  <Select.Option value="Evening">Evening (3:30 PM – 7:30 PM)</Select.Option>
+                </Select>
+              </Form.Item>
+              <Form.Item>
+                <Space>
+                  <Button type="primary" htmlType="submit">
+                    Update Record
+                  </Button>
+                  <Button onClick={() => {
+                    setEditModalVisible(false);
+                    setEditingRecord(null);
+                    editForm.resetFields();
+                  }}>
+                    Cancel
+                  </Button>
+                </Space>
+              </Form.Item>
+            </Form>
+          </Modal>
         </Content>
       </Layout>
     </Layout>
@@ -1195,6 +1366,9 @@ function SuperAdminUpdateDuty() {
   const [updating, setUpdating] = React.useState(false);
   const [showScanner, setShowScanner] = React.useState(false);
   const [dutySchedule, setDutySchedule] = React.useState('');
+  const [editModalVisible, setEditModalVisible] = React.useState(false);
+  const [editingRecord, setEditingRecord] = React.useState(null);
+  const [editForm] = Form.useForm();
 
   React.useEffect(() => {
     async function fetchUsers() {
@@ -1382,10 +1556,112 @@ function SuperAdminUpdateDuty() {
     }
   };
 
+  const handleEditRecord = (record) => {
+    setEditingRecord(record);
+    editForm.setFieldsValue({
+      comingTime: record.comingTime || '',
+      finishingTime: record.finishingTime || '',
+      dutySchedule: record.dutySchedule || ''
+    });
+    setEditModalVisible(true);
+  };
+
+  const handleDeleteRecord = async (record) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/users/${selectedId}/attendance/${record.date}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        message.success('Attendance record deleted successfully');
+        // Refresh attendance data
+        const userRes = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/users/${selectedId}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const userData = await userRes.json();
+        if (userRes.ok) {
+          setAttendance(userData.attendance || []);
+        }
+      } else {
+        message.error(data.message || 'Failed to delete attendance record');
+      }
+    } catch (err) {
+      message.error('Failed to delete attendance record');
+    }
+  };
+
+  const handleEditSubmit = async (values) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/users/${selectedId}/attendance/${editingRecord.date}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(values),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        message.success('Attendance record updated successfully');
+        setEditModalVisible(false);
+        setEditingRecord(null);
+        // Refresh attendance data
+        const userRes = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/users/${selectedId}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const userData = await userRes.json();
+        if (userRes.ok) {
+          setAttendance(userData.attendance || []);
+        }
+      } else {
+        message.error(data.message || 'Failed to update attendance record');
+      }
+    } catch (err) {
+      message.error('Failed to update attendance record');
+    }
+  };
+
   const attendanceColumns = [
     { title: 'Date', dataIndex: 'date', key: 'date' },
     { title: 'Coming Time', dataIndex: 'comingTime', key: 'comingTime' },
     { title: 'Finishing Time', dataIndex: 'finishingTime', key: 'finishingTime' },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_, record) => (
+        <Space>
+          <Button 
+            type="primary" 
+            size="small" 
+            icon={<EditOutlined />}
+            onClick={() => handleEditRecord(record)}
+          >
+            Edit
+          </Button>
+          <Button 
+            type="primary" 
+            danger 
+            size="small" 
+            icon={<DeleteOutlined />}
+            onClick={() => {
+              Modal.confirm({
+                title: 'Delete Attendance Record',
+                content: `Are you sure you want to delete the attendance record for ${record.date}?`,
+                okText: 'Yes',
+                okType: 'danger',
+                cancelText: 'No',
+                onOk: () => handleDeleteRecord(record),
+              });
+            }}
+          >
+            Delete
+          </Button>
+        </Space>
+      ),
+    },
   ];
 
   const handleQrScan = async (scannedText) => {
@@ -1650,6 +1926,72 @@ function SuperAdminUpdateDuty() {
             {showScanner ? 'Hide' : 'Show'} QR Scanner
           </Button>
           {showScanner && <QrScannerComponent onScan={handleQrScan} />}
+          
+          {/* Edit Attendance Record Modal */}
+          <Modal
+            title="Edit Attendance Record"
+            open={editModalVisible}
+            onCancel={() => {
+              setEditModalVisible(false);
+              setEditingRecord(null);
+              editForm.resetFields();
+            }}
+            footer={null}
+            width={500}
+          >
+            <Form
+              form={editForm}
+              layout="vertical"
+              onFinish={handleEditSubmit}
+            >
+              <Form.Item
+                label="Date"
+              >
+                <Input
+                  value={editingRecord?.date}
+                  disabled
+                  style={{ background: '#f5f5f5' }}
+                />
+              </Form.Item>
+              <Form.Item
+                label="Coming Time"
+                name="comingTime"
+                rules={[{ required: true, message: 'Please enter coming time' }]}
+              >
+                <Input type="time" />
+              </Form.Item>
+              <Form.Item
+                label="Finishing Time"
+                name="finishingTime"
+              >
+                <Input type="time" />
+              </Form.Item>
+              <Form.Item
+                label="Duty Schedule"
+                name="dutySchedule"
+              >
+                <Select placeholder="Select duty schedule">
+                  <Select.Option value="Early Morning">Early Morning (4:30 AM – 7:30 AM)</Select.Option>
+                  <Select.Option value="Morning">Morning (8:00 AM – 11:00 AM)</Select.Option>
+                  <Select.Option value="Evening">Evening (3:30 PM – 7:30 PM)</Select.Option>
+                </Select>
+              </Form.Item>
+              <Form.Item>
+                <Space>
+                  <Button type="primary" htmlType="submit">
+                    Update Record
+                  </Button>
+                  <Button onClick={() => {
+                    setEditModalVisible(false);
+                    setEditingRecord(null);
+                    editForm.resetFields();
+                  }}>
+                    Cancel
+                  </Button>
+                </Space>
+              </Form.Item>
+            </Form>
+          </Modal>
         </Content>
       </Layout>
     </Layout>

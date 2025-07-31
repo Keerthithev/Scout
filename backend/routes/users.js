@@ -342,4 +342,55 @@ router.get('/public/:id', async (req, res) => {
   }
 });
 
+// Edit specific attendance record (admin only)
+router.put('/:id/attendance/:date', authMiddleware, requireAnyRole(['super', 'secondary']), async (req, res) => {
+  try {
+    const { comingTime, finishingTime, dutySchedule } = req.body;
+    const { date } = req.params;
+    
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    // Find the attendance record for the specific date
+    const attendanceRecord = user.attendance.find(a => a.date === date);
+    if (!attendanceRecord) {
+      return res.status(404).json({ message: 'Attendance record not found for this date' });
+    }
+    
+    // Update the attendance record
+    if (comingTime !== undefined) attendanceRecord.comingTime = comingTime;
+    if (finishingTime !== undefined) attendanceRecord.finishingTime = finishingTime;
+    if (dutySchedule !== undefined) attendanceRecord.dutySchedule = dutySchedule;
+    
+    await user.save();
+    res.json({ message: 'Attendance record updated successfully', attendanceRecord });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Delete specific attendance record (admin only)
+router.delete('/:id/attendance/:date', authMiddleware, requireAnyRole(['super', 'secondary']), async (req, res) => {
+  try {
+    const { date } = req.params;
+    
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    // Find and remove the attendance record for the specific date
+    const attendanceIndex = user.attendance.findIndex(a => a.date === date);
+    if (attendanceIndex === -1) {
+      return res.status(404).json({ message: 'Attendance record not found for this date' });
+    }
+    
+    const deletedRecord = user.attendance[attendanceIndex];
+    user.attendance.splice(attendanceIndex, 1);
+    await user.save();
+    
+    res.json({ message: 'Attendance record deleted successfully', deletedRecord });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 module.exports = router; 
