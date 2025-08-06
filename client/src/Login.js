@@ -5,7 +5,7 @@ import { Form, Input, Button, Typography, Card, Row, Col, message, Layout, Space
 import { SafetyOutlined, EyeInvisibleOutlined, EyeTwoTone, UserOutlined, LockOutlined } from "@ant-design/icons"
 import { useNavigate } from "react-router-dom"
 
-const { Title, Paragraph, Text } = Typography
+const { Title, Text } = Typography
 const { Header, Content, Footer } = Layout
 
 const API_URL = process.env.REACT_APP_API_URL || ""

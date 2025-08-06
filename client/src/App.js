@@ -161,7 +161,6 @@ function SuperAdminDashboard() {
 
   // Always recalculate from attendance array, ignore totalDutyTime from backend
   const totalDutyTime = users.reduce((sum, u) => sum + calculateLiveDutyTime(u), 0);
-  const topUsers = [...users].sort((a, b) => calculateLiveDutyTime(b) - calculateLiveDutyTime(a)).slice(0, 5);
 
   const trophyIcons = [
     <CrownTwoTone twoToneColor="#FFD700" style={{ fontSize: 24 }} />, // Gold
