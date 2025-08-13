@@ -9,6 +9,7 @@ import { isAuthenticated, getAdminRole, logout, startSessionTimer, resetSessionT
 import AddUserForm from './components/AddUserForm';
 import UserStatusPage from './pages/UserStatusPage';
 import ViewAllUsers from './pages/ViewAllUsers';
+import ErrorBoundary from './components/ErrorBoundary';
 import { TrophyTwoTone, CrownTwoTone, SmileTwoTone, LikeTwoTone, DownloadOutlined, QrcodeOutlined, EyeOutlined, UserOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import QrScanner from 'react-qr-scanner';
 import "../src/index.css"
@@ -16,60 +17,62 @@ import "../src/App.css"
 
 export default function App() {
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#1677ff' } }}>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/admin" element={<Login />} />
-          <Route path="/dashboard/super" element={
-            <PrivateRoute role="super">
-              <SuperAdminDashboard />
-            </PrivateRoute>
-          } />
-          <Route path="/dashboard/super/add-user" element={
-            <PrivateRoute role="super">
-              <AddUserPage />
-            </PrivateRoute>
-          } />
-          <Route path="/dashboard/super/view-all-users" element={
-            <PrivateRoute role="super">
-              <ViewAllUsers />
-            </PrivateRoute>
-          } />
-          <Route path="/dashboard/super/update-duty" element={
-            <PrivateRoute role="super">
-              <SuperAdminUpdateDuty />
-            </PrivateRoute>
-          } />
-          <Route path="/dashboard/super/attendance-history" element={
-            <PrivateRoute role="super">
-              <AttendanceHistory />
-            </PrivateRoute>
-          } />
-          <Route path="/dashboard/secondary" element={
-            <PrivateRoute role="secondary">
-              <SecondaryAdminDashboard />
-            </PrivateRoute>
-          } />
-          <Route path="/dashboard/secondary/view-users" element={
-            <PrivateRoute role="secondary">
-              <SecondaryAdminViewUsers />
-            </PrivateRoute>
-          } />
-          <Route path="/dashboard/secondary/update-duty" element={
-            <PrivateRoute role="secondary">
-              <SecondaryAdminUpdateDuty />
-            </PrivateRoute>
-          } />
-          <Route path="/dashboard/secondary/attendance-history" element={
-            <PrivateRoute role="secondary">
-              <AttendanceHistory />
-            </PrivateRoute>
-          } />
-          <Route path="/user/:userId" element={<UserStatusPage />} />
-        </Routes>
-      </Router>
-    </ConfigProvider>
+    <ErrorBoundary>
+      <ConfigProvider theme={{ token: { colorPrimary: '#1677ff' } }}>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/admin" element={<Login />} />
+            <Route path="/dashboard/super" element={
+              <PrivateRoute role="super">
+                <SuperAdminDashboard />
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/super/add-user" element={
+              <PrivateRoute role="super">
+                <AddUserPage />
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/super/view-all-users" element={
+              <PrivateRoute role="super">
+                <ViewAllUsers />
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/super/update-duty" element={
+              <PrivateRoute role="super">
+                <SuperAdminUpdateDuty />
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/super/attendance-history" element={
+              <PrivateRoute role="super">
+                <AttendanceHistory />
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/secondary" element={
+              <PrivateRoute role="secondary">
+                <SecondaryAdminDashboard />
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/secondary/view-users" element={
+              <PrivateRoute role="secondary">
+                <SecondaryAdminViewUsers />
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/secondary/update-duty" element={
+              <PrivateRoute role="secondary">
+                <SecondaryAdminUpdateDuty />
+              </PrivateRoute>
+            } />
+            <Route path="/dashboard/secondary/attendance-history" element={
+              <PrivateRoute role="secondary">
+                <AttendanceHistory />
+              </PrivateRoute>
+            } />
+            <Route path="/user/:userId" element={<UserStatusPage />} />
+          </Routes>
+        </Router>
+      </ConfigProvider>
+    </ErrorBoundary>
   );
 }
 
@@ -1376,7 +1379,7 @@ function SuperAdminUpdateDuty() {
       setLoading(true);
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/users`, {
+        const res = await fetch(`${API_URL}/api/users`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         const data = await res.json();
@@ -1396,7 +1399,7 @@ function SuperAdminUpdateDuty() {
       if (selectedId) {
         try {
           const token = localStorage.getItem('token');
-          const res = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/users/${selectedId}`, {
+          const res = await fetch(`${API_URL}/api/users/${selectedId}`, {
             headers: { 'Authorization': `Bearer ${token}` },
           });
           const data = await res.json();
@@ -1458,7 +1461,7 @@ function SuperAdminUpdateDuty() {
     
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/users/${selectedId}/duty`, {
+      const res = await fetch(`${API_URL}/api/users/${selectedId}/duty`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1525,7 +1528,7 @@ function SuperAdminUpdateDuty() {
     
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/users/${selectedId}/duty`, {
+      const res = await fetch(`${API_URL}/api/users/${selectedId}/duty`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1537,7 +1540,7 @@ function SuperAdminUpdateDuty() {
       if (res.ok) {
         message.success('Finishing time updated successfully!');
         // Refresh user details
-        const userRes = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/users/${selectedId}`, {
+        const userRes = await fetch(`${API_URL}/api/users/${selectedId}`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         const userData = await userRes.json();
@@ -1545,7 +1548,7 @@ function SuperAdminUpdateDuty() {
           setSelectedUser(userData);
           setAttendance(userData.attendance || []);
         }
-        await fetch(`${process.env.REACT_APP_API_URL || ''}/api/users/${selectedId}/send-finish-email`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+        await fetch(`${API_URL}/api/users/${selectedId}/send-finish-email`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
         message.success('Your work is finished as professional.');
       } else {
         message.error(data.message || 'Failed to update finishing time');
